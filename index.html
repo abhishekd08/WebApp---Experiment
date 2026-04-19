@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Sprint" />
+  <meta name="theme-color" content="#0a0a0f" />
+  <title>Sprint</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --surface2: #1a1a24;
+      --surface3: #22222f;
+      --border: rgba(255,255,255,0.07);
+      --border-strong: rgba(255,255,255,0.13);
+      --text: #f0f0f8;
+      --text-muted: #6b6b82;
+      --text-dim: #3d3d52;
+
+      --todo-color: #4a7eff;
+      --inprogress-color: #f5a623;
+      --onhold-color: #9b59b6;
+      --done-color: #2ecc71;
+
+      --cat-deepwork: #ff6b6b;
+      --cat-dev: #4a7eff;
+      --cat-learning: #f5a623;
+      --cat-finance: #2ecc71;
+      --cat-personal: #a29bfe;
+      --cat-health: #fd79a8;
+
+      --radius: 16px;
+      --radius-sm: 10px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100dvh;
+      overflow-x: hidden;
+      overscroll-behavior: none;
+    }
+
+    /* ---- LAYOUT ---- */
+    .app {
+      display: flex;
+      flex-direction: column;
+      min-height: 100dvh;
+      padding-top: var(--safe-top);
+    }
+
+    /* ---- HEADER ---- */
+    .header {
+      padding: 20px 20px 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--bg);
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 26px;
+      letter-spacing: -1px;
+      color: var(--text);
+    }
+
+    .logo span {
+      color: var(--todo-color);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.15s;
+    }
+
+    .icon-btn:active { transform: scale(0.93); background: var(--surface3); }
+
+    .sprint-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 400;
+      letter-spacing: 0.3px;
+    }
+
+    .sprint-dates {
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+
+    /* ---- PROGRESS BAR ---- */
+    .progress-bar-wrap {
+      height: 3px;
+      background: var(--surface3);
+      border-radius: 99px;
+      margin-bottom: 18px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--todo-color), var(--done-color));
+      border-radius: 99px;
+      transition: width 0.5s ease;
+    }
+
+    /* ---- STATUS TABS ---- */
+    .tabs {
+      display: flex;
+      gap: 6px;
+      padding: 0 20px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      margin-bottom: 16px;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+
+    .tab {
+      flex-shrink: 0;
+      padding: 8px 16px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tab .count {
+      font-size: 11px;
+      background: var(--surface3);
+      border-radius: 99px;
+      padding: 1px 6px;
+      font-weight: 600;
+    }
+
+    .tab.active[data-status="todo"] { background: rgba(74,126,255,0.15); border-color: var(--todo-color); color: var(--todo-color); }
+    .tab.active[data-status="inprogress"] { background: rgba(245,166,35,0.15); border-color: var(--inprogress-color); color: var(--inprogress-color); }
+    .tab.active[data-status="onhold"] { background: rgba(155,89,182,0.15); border-color: var(--onhold-color); color: var(--onhold-color); }
+    .tab.active[data-status="done"] { background: rgba(46,204,113,0.15); border-color: var(--done-color); color: var(--done-color); }
+
+    .tab:active { transform: scale(0.95); }
+
+    /* ---- TASK LIST ---- */
+    .task-list {
+      flex: 1;
+      padding: 0 16px;
+      padding-bottom: calc(120px + var(--safe-bottom));
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      gap: 12px;
+      color: var(--text-dim);
+    }
+
+    .empty-icon { font-size: 48px; opacity: 0.4; }
+    .empty-state p { font-size: 14px; color: var(--text-muted); text-align: center; line-height: 1.6; }
+
+    /* ---- TASK CARD ---- */
+    .task-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: all 0.15s;
+      position: relative;
+      overflow: hidden;
+      animation: slideIn 0.2s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .task-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      border-radius: 99px 0 0 99px;
+    }
+
+    .task-card[data-cat="Deep Work"]::before { background: var(--cat-deepwork); }
+    .task-card[data-cat="Dev"]::before { background: var(--cat-dev); }
+    .task-card[data-cat="Learning"]::before { background: var(--cat-learning); }
+    .task-card[data-cat="Finance"]::before { background: var(--cat-finance); }
+    .task-card[data-cat="Personal"]::before { background: var(--cat-personal); }
+    .task-card[data-cat="Health"]::before { background: var(--cat-health); }
+
+    .task-card:active { transform: scale(0.98); background: var(--surface2); }
+
+    .task-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .task-title {
+      font-size: 15px;
+      font-weight: 500;
+      line-height: 1.4;
+      flex: 1;
+    }
+
+    .task-card[data-status="done"] .task-title {
+      text-decoration: line-through;
+      color: var(--text-muted);
+    }
+
+    .priority-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 5px;
+    }
+
+    .priority-dot[data-p="High"] { background: #ff6b6b; box-shadow: 0 0 6px rgba(255,107,107,0.5); }
+    .priority-dot[data-p="Medium"] { background: #f5a623; }
+    .priority-dot[data-p="Low"] { background: var(--text-dim); }
+
+    .task-card-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .task-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cat-badge {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 8px;
+      border-radius: 99px;
+      background: var(--surface3);
+      color: var(--text-muted);
+    }
+
+    .task-note-indicator {
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    .status-pill {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 99px;
+      letter-spacing: 0.3px;
+    }
+
+    .status-pill[data-s="todo"] { background: rgba(74,126,255,0.15); color: var(--todo-color); }
+    .status-pill[data-s="inprogress"] { background: rgba(245,166,35,0.15); color: var(--inprogress-color); }
+    .status-pill[data-s="onhold"] { background: rgba(155,89,182,0.15); color: var(--onhold-color); }
+    .status-pill[data-s="done"] { background: rgba(46,204,113,0.15); color: var(--done-color); }
+
+    /* ---- FAB ---- */
+    .fab {
+      position: fixed;
+      bottom: calc(24px + var(--safe-bottom));
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 18px;
+      background: var(--todo-color);
+      color: white;
+      font-size: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 8px 32px rgba(74,126,255,0.4);
+      z-index: 200;
+      transition: all 0.15s;
+      border: none;
+    }
+
+    .fab:active { transform: scale(0.92); }
+
+    /* ---- BOTTOM SHEET ---- */
+    .sheet-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 300;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+      backdrop-filter: blur(4px);
+    }
+
+    .sheet-overlay.open { opacity: 1; pointer-events: all; }
+
+    .sheet {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border-radius: 24px 24px 0 0;
+      z-index: 400;
+      padding: 12px 20px;
+      padding-bottom: calc(24px + var(--safe-bottom));
+      transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+      max-height: 92dvh;
+      overflow-y: auto;
+    }
+
+    .sheet.open { transform: translateY(0); }
+
+    .sheet-handle {
+      width: 36px;
+      height: 4px;
+      background: var(--surface3);
+      border-radius: 99px;
+      margin: 0 auto 20px;
+    }
+
+    .sheet-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+
+    /* ---- FORM ---- */
+    .form-group { margin-bottom: 16px; }
+
+    .form-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .form-input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .form-input:focus { border-color: var(--todo-color); }
+    .form-input::placeholder { color: var(--text-dim); }
+
+    textarea.form-input {
+      resize: none;
+      min-height: 80px;
+    }
+
+    .chip-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      padding: 7px 14px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 500;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .chip:active { transform: scale(0.95); }
+
+    .chip.selected[data-cat="Deep Work"] { background: rgba(255,107,107,0.15); border-color: var(--cat-deepwork); color: var(--cat-deepwork); }
+    .chip.selected[data-cat="Dev"] { background: rgba(74,126,255,0.15); border-color: var(--cat-dev); color: var(--cat-dev); }
+    .chip.selected[data-cat="Learning"] { background: rgba(245,166,35,0.15); border-color: var(--cat-learning); color: var(--cat-learning); }
+    .chip.selected[data-cat="Finance"] { background: rgba(46,204,113,0.15); border-color: var(--cat-finance); color: var(--cat-finance); }
+    .chip.selected[data-cat="Personal"] { background: rgba(162,155,254,0.15); border-color: var(--cat-personal); color: var(--cat-personal); }
+    .chip.selected[data-cat="Health"] { background: rgba(253,121,168,0.15); border-color: var(--cat-health); color: var(--cat-health); }
+
+    .chip.selected[data-p="High"] { background: rgba(255,107,107,0.15); border-color: #ff6b6b; color: #ff6b6b; }
+    .chip.selected[data-p="Medium"] { background: rgba(245,166,35,0.15); border-color: #f5a623; color: #f5a623; }
+    .chip.selected[data-p="Low"] { background: rgba(108,108,140,0.15); border-color: var(--text-dim); color: var(--text-muted); }
+
+    .chip.selected[data-s="todo"] { background: rgba(74,126,255,0.15); border-color: var(--todo-color); color: var(--todo-color); }
+    .chip.selected[data-s="inprogress"] { background: rgba(245,166,35,0.15); border-color: var(--inprogress-color); color: var(--inprogress-color); }
+    .chip.selected[data-s="onhold"] { background: rgba(155,89,182,0.15); border-color: var(--onhold-color); color: var(--onhold-color); }
+    .chip.selected[data-s="done"] { background: rgba(46,204,113,0.15); border-color: var(--done-color); color: var(--done-color); }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 14px;
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+    }
+
+    .btn:active { transform: scale(0.97); }
+
+    .btn-primary { background: var(--todo-color); color: white; }
+    .btn-danger { background: rgba(255,107,107,0.15); color: #ff6b6b; border: 1px solid rgba(255,107,107,0.3); }
+    .btn-ghost { background: var(--surface2); color: var(--text-muted); }
+
+    /* ---- HISTORY SCREEN ---- */
+    .screen {
+      display: none;
+      flex-direction: column;
+      min-height: 100dvh;
+      padding-top: var(--safe-top);
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .screen.active { display: flex; }
+
+    .screen-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 20px 20px 16px;
+    }
+
+    .back-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+    }
+
+    .back-btn:active { transform: scale(0.93); }
+
+    .screen-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .sprint-history-item {
+      margin: 0 16px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .sprint-history-item:active { background: var(--surface2); transform: scale(0.99); }
+
+    .sprint-history-dates {
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .sprint-stats {
+      display: flex;
+      gap: 12px;
+    }
+
+    .sprint-stat {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .sprint-stat-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .sprint-completion {
+      font-size: 12px;
+      color: var(--done-color);
+      font-weight: 600;
+      margin-top: 8px;
+    }
+
+    /* ---- CARRY OVER TOAST ---- */
+    .toast {
+      position: fixed;
+      bottom: calc(100px + var(--safe-bottom));
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--surface2);
+      border: 1px solid var(--border-strong);
+      border-radius: 99px;
+      padding: 10px 20px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      z-index: 500;
+      opacity: 0;
+      transition: all 0.3s;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ---- MAIN/HISTORY toggle ---- */
+    .main-screen { display: flex; flex-direction: column; flex: 1; }
+    .main-screen.hidden { display: none; }
+    .screen.hidden { display: none; }
+
+    /* ---- DIVIDER ---- */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0 20px 16px;
+    }
+
+    /* ---- SECTION heading ---- */
+    .section-heading {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 0 20px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app" id="app">
+
+  <!-- MAIN SCREEN -->
+  <div class="main-screen" id="mainScreen">
+
+    <div class="header">
+      <div class="header-top">
+        <div class="logo">sprint<span>.</span></div>
+        <div class="header-actions">
+          <div class="icon-btn" id="historyBtn" title="History">📋</div>
+          <div class="icon-btn" id="carryBtn" title="Carry over">↩️</div>
+        </div>
+      </div>
+      <div class="sprint-label">Current Sprint</div>
+      <div class="sprint-dates" id="sprintDates">—</div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="tabs" id="tabs">
+      <div class="tab active" data-status="todo">Todo <span class="count" id="count-todo">0</span></div>
+      <div class="tab" data-status="inprogress">In Progress <span class="count" id="count-inprogress">0</span></div>
+      <div class="tab" data-status="onhold">On Hold <span class="count" id="count-onhold">0</span></div>
+      <div class="tab" data-status="done">Done <span class="count" id="count-done">0</span></div>
+    </div>
+
+    <div class="task-list" id="taskList"></div>
+
+    <button class="fab" id="addBtn">+</button>
+  </div>
+
+  <!-- HISTORY SCREEN -->
+  <div class="screen hidden" id="historyScreen">
+    <div class="screen-header">
+      <div class="back-btn" id="backBtn">←</div>
+      <div class="screen-title">Sprint History</div>
+    </div>
+    <div id="historyList" style="padding-bottom: calc(40px + var(--safe-bottom));"></div>
+  </div>
+
+</div>
+
+<!-- OVERLAY -->
+<div class="sheet-overlay" id="overlay"></div>
+
+<!-- ADD / EDIT TASK SHEET -->
+<div class="sheet" id="taskSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title" id="sheetTitle">New Task</div>
+
+  <div class="form-group">
+    <label class="form-label">Title</label>
+    <input class="form-input" id="taskTitle" placeholder="What needs to be done?" />
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">Category</label>
+    <div class="chip-group" id="catChips">
+      <div class="chip" data-cat="Deep Work">🧠 Deep Work</div>
+      <div class="chip" data-cat="Dev">💻 Dev</div>
+      <div class="chip" data-cat="Learning">📚 Learning</div>
+      <div class="chip" data-cat="Finance">💰 Finance</div>
+      <div class="chip" data-cat="Personal">🏠 Personal</div>
+      <div class="chip" data-cat="Health">🏋️ Health</div>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">Priority</label>
+    <div class="chip-group" id="prioChips">
+      <div class="chip" data-p="High">🔴 High</div>
+      <div class="chip" data-p="Medium">🟡 Medium</div>
+      <div class="chip" data-p="Low">⚪ Low</div>
+    </div>
+  </div>
+
+  <div class="form-group" id="statusGroupWrap">
+    <label class="form-label">Status</label>
+    <div class="chip-group" id="statusChips">
+      <div class="chip" data-s="todo">Todo</div>
+      <div class="chip" data-s="inprogress">In Progress</div>
+      <div class="chip" data-s="onhold">On Hold</div>
+      <div class="chip" data-s="done">Done</div>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">Note (optional)</label>
+    <textarea class="form-input" id="taskNote" placeholder="Any details..."></textarea>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
+    <button class="btn btn-primary" id="saveBtn">Save Task</button>
+  </div>
+  <div class="btn-row" id="deleteRow" style="display:none; margin-top: 4px;">
+    <button class="btn btn-danger" id="deleteBtn">Delete Task</button>
+  </div>
+</div>
+
+<!-- SPRINT HISTORY DETAIL SHEET -->
+<div class="sheet" id="histDetailSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title" id="histDetailTitle">Sprint</div>
+  <div id="histDetailContent"></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ---- STORAGE ----
+  const DB_KEY = 'sprint_app_v1';
+
+  function load() {
+    try { return JSON.parse(localStorage.getItem(DB_KEY)) || defaultState(); }
+    catch { return defaultState(); }
+  }
+
+  function save(state) {
+    localStorage.setItem(DB_KEY, JSON.stringify(state));
+  }
+
+  function defaultState() {
+    return { sprints: [], currentSprintId: null };
+  }
+
+  // ---- SPRINT UTILS ----
+  function getMonday(d) {
+    const dt = new Date(d);
+    const day = dt.getDay();
+    const diff = (day === 0 ? -6 : 1 - day);
+    dt.setDate(dt.getDate() + diff);
+    dt.setHours(0,0,0,0);
+    return dt;
+  }
+
+  function getSunday(monday) {
+    const d = new Date(monday);
+    d.setDate(d.getDate() + 6);
+    d.setHours(23,59,59,999);
+    return d;
+  }
+
+  function sprintId(monday) {
+    return monday.toISOString().slice(0,10);
+  }
+
+  function formatDate(d) {
+    return new Date(d).toLocaleDateString('en-IN', { day:'numeric', month:'short' });
+  }
+
+  function formatDateFull(d) {
+    return new Date(d).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+  }
+
+  function getCurrentSprintId() {
+    return sprintId(getMonday(new Date()));
+  }
+
+  function ensureCurrentSprint(state) {
+    const id = getCurrentSprintId();
+    if (!state.sprints.find(s => s.id === id)) {
+      const monday = getMonday(new Date());
+      const sunday = getSunday(monday);
+      state.sprints.push({
+        id,
+        start: monday.toISOString(),
+        end: sunday.toISOString(),
+        tasks: []
+      });
+    }
+    state.currentSprintId = id;
+    return state;
+  }
+
+  function getCurrentSprint(state) {
+    return state.sprints.find(s => s.id === state.currentSprintId);
+  }
+
+  // ---- STATE ----
+  let state = load();
+  state = ensureCurrentSprint(state);
+  save(state);
+
+  let activeStatus = 'todo';
+  let editingTaskId = null;
+  let selectedCat = null;
+  let selectedPrio = 'Medium';
+  let selectedStatus = 'todo';
+
+  // ---- RENDER ----
+  function render() {
+    const sprint = getCurrentSprint(state);
+    if (!sprint) return;
+
+    // Sprint dates
+    document.getElementById('sprintDates').textContent =
+      `${formatDate(sprint.start)} – ${formatDate(sprint.end)}`;
+
+    // Progress
+    const total = sprint.tasks.length;
+    const done = sprint.tasks.filter(t => t.status === 'done').length;
+    const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+    document.getElementById('progressFill').style.width = pct + '%';
+
+    // Counts
+    ['todo','inprogress','onhold','done'].forEach(s => {
+      document.getElementById('count-' + s).textContent =
+        sprint.tasks.filter(t => t.status === s).length;
+    });
+
+    // Task list
+    const list = document.getElementById('taskList');
+    const filtered = sprint.tasks.filter(t => t.status === activeStatus);
+
+    if (filtered.length === 0) {
+      list.innerHTML = `<div class="empty-state">
+        <div class="empty-icon">${statusEmoji(activeStatus)}</div>
+        <p>No tasks here.<br>Tap + to add one.</p>
+      </div>`;
+    } else {
+      list.innerHTML = filtered.map(t => `
+        <div class="task-card" data-id="${t.id}" data-cat="${t.category}" data-status="${t.status}">
+          <div class="task-card-top">
+            <div class="task-title">${escHtml(t.title)}</div>
+            <div class="priority-dot" data-p="${t.priority}"></div>
+          </div>
+          <div class="task-card-bottom">
+            <div class="task-meta">
+              <div class="cat-badge">${t.category}</div>
+              ${t.note ? '<div class="task-note-indicator">📝</div>' : ''}
+            </div>
+            <div class="status-pill" data-s="${t.status}">${statusLabel(t.status)}</div>
+          </div>
+        </div>
+      `).join('');
+
+      list.querySelectorAll('.task-card').forEach(card => {
+        card.addEventListener('click', () => openEditSheet(card.dataset.id));
+      });
+    }
+  }
+
+  function statusLabel(s) {
+    return { todo:'Todo', inprogress:'In Progress', onhold:'On Hold', done:'Done' }[s] || s;
+  }
+
+  function statusEmoji(s) {
+    return { todo:'📋', inprogress:'⚡', onhold:'⏸️', done:'✅' }[s] || '📋';
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ---- TABS ----
+  document.getElementById('tabs').addEventListener('click', e => {
+    const tab = e.target.closest('.tab');
+    if (!tab) return;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    activeStatus = tab.dataset.status;
+    render();
+  });
+
+  // ---- ADD SHEET ----
+  function openAddSheet() {
+    editingTaskId = null;
+    selectedCat = null;
+    selectedPrio = 'Medium';
+    selectedStatus = activeStatus;
+    document.getElementById('sheetTitle').textContent = 'New Task';
+    document.getElementById('taskTitle').value = '';
+    document.getElementById('taskNote').value = '';
+    document.getElementById('deleteRow').style.display = 'none';
+    syncChips();
+    showSheet('taskSheet');
+  }
+
+  function openEditSheet(id) {
+    const sprint = getCurrentSprint(state);
+    const task = sprint.tasks.find(t => t.id === id);
+    if (!task) return;
+    editingTaskId = id;
+    selectedCat = task.category;
+    selectedPrio = task.priority;
+    selectedStatus = task.status;
+    document.getElementById('sheetTitle').textContent = 'Edit Task';
+    document.getElementById('taskTitle').value = task.title;
+    document.getElementById('taskNote').value = task.note || '';
+    document.getElementById('deleteRow').style.display = 'flex';
+    syncChips();
+    showSheet('taskSheet');
+  }
+
+  function syncChips() {
+    document.querySelectorAll('#catChips .chip').forEach(c => {
+      c.classList.toggle('selected', c.dataset.cat === selectedCat);
+    });
+    document.querySelectorAll('#prioChips .chip').forEach(c => {
+      c.classList.toggle('selected', c.dataset.p === selectedPrio);
+    });
+    document.querySelectorAll('#statusChips .chip').forEach(c => {
+      c.classList.toggle('selected', c.dataset.s === selectedStatus);
+    });
+  }
+
+  document.getElementById('catChips').addEventListener('click', e => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    selectedCat = chip.dataset.cat;
+    syncChips();
+  });
+
+  document.getElementById('prioChips').addEventListener('click', e => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    selectedPrio = chip.dataset.p;
+    syncChips();
+  });
+
+  document.getElementById('statusChips').addEventListener('click', e => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    selectedStatus = chip.dataset.s;
+    syncChips();
+  });
+
+  document.getElementById('addBtn').addEventListener('click', openAddSheet);
+
+  document.getElementById('saveBtn').addEventListener('click', () => {
+    const title = document.getElementById('taskTitle').value.trim();
+    if (!title) {
+      document.getElementById('taskTitle').focus();
+      document.getElementById('taskTitle').style.borderColor = '#ff6b6b';
+      setTimeout(() => document.getElementById('taskTitle').style.borderColor = '', 1000);
+      return;
+    }
+
+    const sprint = getCurrentSprint(state);
+
+    if (editingTaskId) {
+      const task = sprint.tasks.find(t => t.id === editingTaskId);
+      if (task) {
+        task.title = title;
+        task.category = selectedCat || 'Personal';
+        task.priority = selectedPrio;
+        task.status = selectedStatus;
+        task.note = document.getElementById('taskNote').value.trim();
+      }
+    } else {
+      sprint.tasks.push({
+        id: Date.now().toString(),
+        title,
+        category: selectedCat || 'Personal',
+        priority: selectedPrio,
+        status: selectedStatus,
+        note: document.getElementById('taskNote').value.trim(),
+        createdAt: new Date().toISOString()
+      });
+    }
+
+    save(state);
+    hideSheet('taskSheet');
+    render();
+    showToast(editingTaskId ? 'Task updated' : 'Task added ✓');
+  });
+
+  document.getElementById('deleteBtn').addEventListener('click', () => {
+    if (!editingTaskId) return;
+    const sprint = getCurrentSprint(state);
+    sprint.tasks = sprint.tasks.filter(t => t.id !== editingTaskId);
+    save(state);
+    hideSheet('taskSheet');
+    render();
+    showToast('Task deleted');
+  });
+
+  document.getElementById('cancelBtn').addEventListener('click', () => hideSheet('taskSheet'));
+
+  // ---- CARRY OVER ----
+  document.getElementById('carryBtn').addEventListener('click', () => {
+    const sprint = getCurrentSprint(state);
+    const incomplete = sprint.tasks.filter(t => t.status !== 'done');
+    if (incomplete.length === 0) {
+      showToast('No incomplete tasks to carry over');
+      return;
+    }
+    // mark current sprint tasks as carried (remove from current), add to current sprint as fresh todo
+    // Actually: just reset their status to todo so they appear in todo again (they're already current sprint)
+    // More useful: this is current sprint, so just move onhold/inprogress → todo as a reset nudge
+    const carried = sprint.tasks.filter(t => t.status === 'onhold');
+    if (carried.length === 0) {
+      showToast('On-hold tasks will carry over at week end');
+      return;
+    }
+    carried.forEach(t => { t.status = 'todo'; });
+    save(state);
+    render();
+    showToast(`${carried.length} task${carried.length > 1 ? 's' : ''} moved to Todo`);
+  });
+
+  // ---- HISTORY ----
+  document.getElementById('historyBtn').addEventListener('click', () => {
+    renderHistory();
+    document.getElementById('mainScreen').classList.add('hidden');
+    document.getElementById('historyScreen').classList.remove('hidden');
+  });
+
+  document.getElementById('backBtn').addEventListener('click', () => {
+    document.getElementById('historyScreen').classList.add('hidden');
+    document.getElementById('mainScreen').classList.remove('hidden');
+  });
+
+  function renderHistory() {
+    const list = document.getElementById('historyList');
+    const pastSprints = state.sprints
+      .filter(s => s.id !== state.currentSprintId)
+      .sort((a,b) => new Date(b.start) - new Date(a.start));
+
+    if (pastSprints.length === 0) {
+      list.innerHTML = `<div class="empty-state" style="padding:60px 20px;">
+        <div class="empty-icon">📭</div>
+        <p>No past sprints yet.<br>Come back next week!</p>
+      </div>`;
+      return;
+    }
+
+    list.innerHTML = pastSprints.map(sprint => {
+      const total = sprint.tasks.length;
+      const done = sprint.tasks.filter(t => t.status === 'done').length;
+      const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+      return `<div class="sprint-history-item" data-sid="${sprint.id}">
+        <div class="sprint-history-dates">${formatDate(sprint.start)} – ${formatDate(sprint.end)}</div>
+        <div class="sprint-stats">
+          <div class="sprint-stat"><div class="sprint-stat-dot" style="background:var(--todo-color)"></div>${sprint.tasks.filter(t=>t.status==='todo').length} todo</div>
+          <div class="sprint-stat"><div class="sprint-stat-dot" style="background:var(--inprogress-color)"></div>${sprint.tasks.filter(t=>t.status==='inprogress').length} in progress</div>
+          <div class="sprint-stat"><div class="sprint-stat-dot" style="background:var(--done-color)"></div>${done} done</div>
+        </div>
+        <div class="sprint-completion">${pct}% completed · ${total} tasks total</div>
+      </div>`;
+    }).join('');
+
+    list.querySelectorAll('.sprint-history-item').forEach(item => {
+      item.addEventListener('click', () => openHistDetail(item.dataset.sid));
+    });
+  }
+
+  function openHistDetail(sid) {
+    const sprint = state.sprints.find(s => s.id === sid);
+    if (!sprint) return;
+    document.getElementById('histDetailTitle').textContent =
+      `${formatDate(sprint.start)} – ${formatDate(sprint.end)}`;
+
+    const statuses = ['done','inprogress','onhold','todo'];
+    let html = '';
+    statuses.forEach(st => {
+      const tasks = sprint.tasks.filter(t => t.status === st);
+      if (tasks.length === 0) return;
+      html += `<div class="section-heading" style="margin-top:16px;">${statusLabel(st)}</div>`;
+      tasks.forEach(t => {
+        html += `<div class="task-card" data-cat="${t.category}" data-status="${t.status}" style="margin:0 0 8px; cursor:default;">
+          <div class="task-card-top">
+            <div class="task-title">${escHtml(t.title)}</div>
+            <div class="priority-dot" data-p="${t.priority}"></div>
+          </div>
+          <div class="task-card-bottom">
+            <div class="cat-badge">${t.category}</div>
+            <div class="status-pill" data-s="${t.status}">${statusLabel(t.status)}</div>
+          </div>
+        </div>`;
+      });
+    });
+
+    document.getElementById('histDetailContent').innerHTML = html;
+    showSheet('histDetailSheet');
+  }
+
+  // ---- SHEET HELPERS ----
+  function showSheet(id) {
+    document.getElementById('overlay').classList.add('open');
+    document.getElementById(id).classList.add('open');
+  }
+
+  function hideSheet(id) {
+    document.getElementById('overlay').classList.remove('open');
+    document.getElementById(id).classList.remove('open');
+  }
+
+  document.getElementById('overlay').addEventListener('click', () => {
+    ['taskSheet','histDetailSheet'].forEach(id => {
+      document.getElementById(id).classList.remove('open');
+    });
+    document.getElementById('overlay').classList.remove('open');
+  });
+
+  // ---- TOAST ----
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  // ---- WEEKLY AUTO-ARCHIVE ----
+  // On load: if stored current sprint is from a previous week, archive it and start new
+  function archiveOldSprints() {
+    const currentId = getCurrentSprintId();
+    // already handled by ensureCurrentSprint
+    state.currentSprintId = currentId;
+  }
+
+  archiveOldSprints();
+  render();
+
+  // ---- SERVICE WORKER (inline registration) ----
+  if ('serviceWorker' in navigator) {
+    const swCode = `
+      const CACHE = 'sprint-v1';
+      const ASSETS = ['/'];
+      self.addEventListener('install', e => {
+        e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+        self.skipWaiting();
+      });
+      self.addEventListener('fetch', e => {
+        e.respondWith(
+          caches.match(e.request).then(r => r || fetch(e.request))
+        );
+      });
+    `;
+    const blob = new Blob([swCode], { type: 'application/javascript' });
+    const swUrl = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(swUrl).catch(() => {});
+  }
+</script>
+</body>
+</html>
